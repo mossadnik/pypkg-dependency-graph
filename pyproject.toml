@@ -1,0 +1,25 @@
+[project]
+name = "pypkg-dependency-graph"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Matthias Ossadnik",email = "ossadnik.matthias@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "libcst (>=1.8.6,<2.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "pypkg_dependency_graph", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "jupyter (>=1.1.1,<2.0.0)",
+    "pytest (>=9.0.2,<10.0.0)"
+]
