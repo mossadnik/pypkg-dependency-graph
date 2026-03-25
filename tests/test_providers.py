@@ -1,6 +1,6 @@
 import libcst as cst
 from pypkg_dependency_graph.providers import ImportProvider
-from pypkg_dependency_graph.const import DOT, STAR
+from pypkg_dependency_graph.models import DOT, STAR
 
 
 class Test_ImportProvider:

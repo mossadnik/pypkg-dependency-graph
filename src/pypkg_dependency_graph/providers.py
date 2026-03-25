@@ -1,8 +1,8 @@
 import libcst as cst
-from .const import ImportPart, DOT, STAR
+from .models import DOT, STAR, Import
 
 
-class ImportProvider(cst.BatchableMetadataProvider[tuple[tuple[ImportPart, ...], ...]]):
+class ImportProvider(cst.BatchableMetadataProvider[tuple[Import, ...]]):
     """
     Marks Name nodes found as a parameter to a function.
     """
@@ -32,7 +32,7 @@ class ImportProvider(cst.BatchableMetadataProvider[tuple[tuple[ImportPart, ...],
         self.set_metadata(node, tuple(prefix + imp for imp in imports))
 
 
-def get_name(node: cst.CSTNode | None) -> tuple[ImportPart, ...]:
+def get_name(node: cst.CSTNode | None) -> Import:
     if node is None:
         return ()
     if isinstance(node, cst.Name):

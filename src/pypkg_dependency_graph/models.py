@@ -9,3 +9,6 @@ class ImportConst(StrEnum):
 type ImportPart = str | ImportConst
 DOT = ImportConst.dot
 STAR = ImportConst.star
+
+type Import = tuple[ImportPart, ...]
+type ModuleIdentifier = tuple[str, ...]
