@@ -55,7 +55,7 @@ class Test_Package_resolve_identifier:
         identifier = ('pkg', 'mod')
         actual = package.resolve_identifier(identifier)
         assert actual == SubModule(mod, package)
-        assert actual.identifier == identifier
+        assert actual.identifier_tuple == identifier
 
     def test_package(self, tmp_path):
         pkg = create_package(tmp_path, 'pkg')
@@ -64,7 +64,7 @@ class Test_Package_resolve_identifier:
         identifier = ('pkg', 'sub_pkg')
         actual = package.resolve_identifier(identifier)
         assert actual == SubPackage(sub_pkg, package)
-        assert actual.identifier == identifier
+        assert actual.identifier_tuple == identifier
 
 
 class Test_Package_resolve_import:

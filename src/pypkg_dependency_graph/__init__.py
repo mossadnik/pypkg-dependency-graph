@@ -1,4 +1,4 @@
-from .api import get_package_dependency_graph
+from .api import get_package_dependency_graph, get_package_tree
 from .package import Package, SubModule, SubPackage
 
 
@@ -8,5 +8,6 @@ __all__ = [
     'Package',
     'SubModule',
     'SubPackage',
-    'get_package_dependency_graph'
+    'get_package_dependency_graph',
+    'get_package_tree',
 ]

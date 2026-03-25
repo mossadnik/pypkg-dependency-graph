@@ -7,8 +7,12 @@ from . import models
 @dataclass(frozen=True)
 class AnyModule:
     @property
-    def identifier(self) -> models.ModuleIdentifier:
+    def identifier_tuple(self) -> models.ModuleIdentifier:
         raise NotImplementedError()
+
+    @property
+    def identifier(self) -> str:
+        return '.'.join(self.identifier_tuple)
 
 
 @dataclass(frozen=True)
@@ -16,7 +20,7 @@ class LibraryModule(AnyModule):
     _identifier: models.ModuleIdentifier
 
     @property
-    def identifier(self) -> models.ModuleIdentifier:
+    def identifier_tuple(self) -> models.ModuleIdentifier:
         return self._identifier
 
 
@@ -28,13 +32,16 @@ class LocalModule(AnyModule):
     def code_path(self) -> Path:
         raise NotImplementedError()
 
+    def get_parent(self) -> 'LocalModule | None':
+        raise NotImplementedError()
+
 
 @dataclass(frozen=True)
 class SubModule(LocalModule):
     package: 'Package'
 
     @property
-    def identifier(self) -> models.ModuleIdentifier:
+    def identifier_tuple(self) -> models.ModuleIdentifier:
         parts = self.path.relative_to(self.package.path).parts
         return (
             self.package.name,
@@ -46,8 +53,8 @@ class SubModule(LocalModule):
     def code_path(self) -> Path:
         return self.path
 
-    def resolve_import(self, identifier: models.Import) -> AnyModule:
-        return self.package.resolve_import(self, identifier)
+    def get_parent(self) -> LocalModule | None:
+        return self.package.resolve_path(self.path.parent)
 
 
 @dataclass(frozen=True)
@@ -55,7 +62,7 @@ class SubPackage(LocalModule):
     package: 'Package'
 
     @property
-    def identifier(self) -> models.ModuleIdentifier:
+    def identifier_tuple(self) -> models.ModuleIdentifier:
         parts = self.path.relative_to(self.package.path).parts
         return (
             self.package.name,
@@ -66,13 +73,16 @@ class SubPackage(LocalModule):
     def code_path(self) -> Path:
         return self.path / '__init__.py'
 
+    def get_parent(self) -> LocalModule | None:
+        return self.package.resolve_path(self.path.parent)
+
 
 @dataclass(frozen=True)
 class Package(LocalModule):
     """A Python package."""
 
     @property
-    def identifier(self) -> models.ModuleIdentifier:
+    def identifier_tuple(self) -> models.ModuleIdentifier:
         return (self.name,)
 
     @property
@@ -83,7 +93,10 @@ class Package(LocalModule):
     def code_path(self) -> Path:
         return self.path / '__init__.py'
 
-    def resolve_path(self, path: Path) -> AnyModule:
+    def get_parent(self) -> LocalModule | None:
+        return None
+
+    def resolve_path(self, path: Path) -> LocalModule:
         if not path.exists():
             raise ValueError(f'path does not exist: {path}')
         if path == self.path:
@@ -119,7 +132,7 @@ class Package(LocalModule):
             level = len(list(it.takewhile(lambda x: x == models.DOT, identifier)))
             if isinstance(module, (Package, SubPackage)):
                 level -= 1
-            search_path = module.identifier
+            search_path = module.identifier_tuple
             if level > 0:
                 search_path = search_path[:-level]
             search_path = search_path + identifier

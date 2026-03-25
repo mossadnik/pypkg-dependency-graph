@@ -30,3 +30,14 @@ def get_dependencies(module: LocalModule, package: Package) -> set[LocalModule]:
         for imp in import_statement
     )
     return {imp for imp in resolved_imports if isinstance(imp, LocalModule)}
+
+
+def get_package_tree(package: Package) -> tuple[set[LocalModule], set[tuple[LocalModule, LocalModule]]]:
+    nodes = set()
+    edges = set()
+    for module in package:
+        nodes.add(module)
+        parent = module.get_parent()
+        if parent:
+            edges.add((module, parent))
+    return nodes, edges
