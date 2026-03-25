@@ -1,5 +1,5 @@
 import pytest
-from pypkg_dependency_graph.project import (
+from pypkg_dependency_graph.package import (
     is_module,
     is_package,
     Package,
@@ -135,6 +135,23 @@ class Test_Package_resolve_import:
         assert actual == SubModule(nested_other, package)
         actual = package.resolve_import(nested, (models.DOT, models.DOT, 'other'))
         assert actual == SubModule(top_other, package)
+
+
+class Test_package_iter:
+    def test_iterates_over_content(self, tmp_path):
+        pkg = create_package(tmp_path, 'pkg')
+        top_other = create_module(pkg, 'other')
+        nested = create_package(pkg, 'nested')
+        nested_other = create_module(nested, 'other')
+        package = Package(pkg)
+        actual = {item for item in package}
+        expected = {
+            package,
+            SubPackage(nested, package),
+            SubModule(top_other, package),
+            SubModule(nested_other, package)
+        }
+        assert actual == expected
 
 
 class Test_is_module:

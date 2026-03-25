@@ -4,14 +4,14 @@ import itertools as it
 from . import models
 
 
-@dataclass
+@dataclass(frozen=True)
 class AnyModule:
     @property
     def identifier(self) -> models.ModuleIdentifier:
         raise NotImplementedError()
 
 
-@dataclass
+@dataclass(frozen=True)
 class LibraryModule(AnyModule):
     _identifier: models.ModuleIdentifier
 
@@ -20,12 +20,16 @@ class LibraryModule(AnyModule):
         return self._identifier
 
 
-@dataclass
+@dataclass(frozen=True)
 class LocalModule(AnyModule):
     path: Path
 
+    @property
+    def code_path(self) -> Path:
+        raise NotImplementedError()
 
-@dataclass
+
+@dataclass(frozen=True)
 class SubModule(LocalModule):
     package: 'Package'
 
@@ -38,11 +42,15 @@ class SubModule(LocalModule):
             parts[-1].split('.')[0]
         )
 
+    @property
+    def code_path(self) -> Path:
+        return self.path
+
     def resolve_import(self, identifier: models.Import) -> AnyModule:
         return self.package.resolve_import(self, identifier)
 
 
-@dataclass
+@dataclass(frozen=True)
 class SubPackage(LocalModule):
     package: 'Package'
 
@@ -54,8 +62,12 @@ class SubPackage(LocalModule):
             *parts,
         )
 
+    @property
+    def code_path(self) -> Path:
+        return self.path / '__init__.py'
 
-@dataclass
+
+@dataclass(frozen=True)
 class Package(LocalModule):
     """A Python package."""
 
@@ -66,6 +78,10 @@ class Package(LocalModule):
     @property
     def name(self) -> str:
         return self.path.name
+
+    @property
+    def code_path(self) -> Path:
+        return self.path / '__init__.py'
 
     def resolve_path(self, path: Path) -> AnyModule:
         if not path.exists():
@@ -113,6 +129,19 @@ class Package(LocalModule):
             return self.resolve_identifier(search_path)
         except ValueError:
             return self.resolve_identifier(search_path[:-1])
+
+    def __iter__(self):
+        """Iterate over all packages and modules."""
+        def iter_pkg(path: Path):
+            for fn in path.iterdir():
+                if is_package(fn):
+                    yield SubPackage(fn, self)
+                    yield from iter_pkg(fn)
+                elif is_module(fn):
+                    yield SubModule(fn, self)
+
+        yield self
+        yield from iter_pkg(self.path)
 
 
 def is_init_py(path: Path) -> bool:
