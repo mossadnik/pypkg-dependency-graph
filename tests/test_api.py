@@ -1,6 +1,6 @@
 from pathlib import Path
 from pypkg_dependency_graph.api import get_package_dependency_graph, get_package_tree
-from pypkg_dependency_graph.package import Package, SubModule, SubPackage
+from pypkg_dependency_graph.package import Package, SubModule, SubPackage, ResourceFile
 from pypkg_dependency_graph.testing import create_module, create_package
 
 
@@ -41,4 +41,23 @@ class Test_get_package_tree_edges:
         }
         nodes, edges = get_package_tree(top)
         assert nodes == {top, top_other, nested, nested_other}
+        assert edges == expected_edges
+
+    def test_adds_resource_files(self, tmp_path: Path):
+        top = create_package(tmp_path, 'pkg')
+        nested = create_package(top, 'nested')
+        resource = nested / 'resource.json'
+        with open(resource, 'w') as f:
+            f.write('')
+
+        top = Package(top)
+        nested = SubPackage(nested, top)
+        resource = ResourceFile(resource, top)
+
+        expected_edges = {
+            (resource, nested),
+            (nested, top),
+        }
+        nodes, edges = get_package_tree(top)
+        assert nodes == {top, nested, resource}
         assert edges == expected_edges

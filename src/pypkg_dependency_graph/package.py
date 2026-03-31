@@ -68,6 +68,9 @@ class ResourceFile(LocalModule):
     def idenfifier(self) -> str:
         return str(self.path.relative_to(self.package.path))
 
+    def get_parent(self) -> LocalModule | None:
+        return self.package.resolve_path(self.path.parent)
+
 
 @dataclass(frozen=True)
 class SubPackage(LocalModule):
