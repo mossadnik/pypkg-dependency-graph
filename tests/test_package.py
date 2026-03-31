@@ -5,6 +5,7 @@ from pypkg_dependency_graph.package import (
     Package,
     SubModule,
     SubPackage,
+    ResourceFile,
     LibraryModule
 )
 from pypkg_dependency_graph import models
@@ -45,6 +46,15 @@ class Test_Package_resolve_path:
         package = Package(pkg)
         actual = package.resolve_path(sub_pkg / '__init__.py')
         assert actual == SubPackage(sub_pkg, package)
+
+    def test_resource_file(self, tmp_path):
+        pkg = create_package(tmp_path, 'pkg')
+        sub_pkg = create_package(pkg, 'sub_pkg')
+        package = Package(pkg)
+        with open(sub_pkg / 'resource.json', 'w') as f:
+            f.write('')
+        actual = package.resolve_path(sub_pkg / 'resource.json')
+        assert actual == ResourceFile(sub_pkg / 'resource.json', package)
 
 
 class Test_Package_resolve_identifier:
@@ -142,6 +152,9 @@ class Test_package_iter:
         pkg = create_package(tmp_path, 'pkg')
         top_other = create_module(pkg, 'other')
         nested = create_package(pkg, 'nested')
+        resource = nested / 'resource.json'
+        with open(resource, 'w') as f:
+            f.write('')
         nested_other = create_module(nested, 'other')
         package = Package(pkg)
         actual = {item for item in package}
@@ -149,9 +162,19 @@ class Test_package_iter:
             package,
             SubPackage(nested, package),
             SubModule(top_other, package),
-            SubModule(nested_other, package)
+            SubModule(nested_other, package),
+            ResourceFile(resource, package)
         }
         assert actual == expected
+
+    def test_does_not_iterate_over_non_package_folders(self, tmp_path):
+        pkg = create_package(tmp_path, 'pkg')
+        nested = pkg / 'nested'
+        nested.mkdir()
+        with open(nested / 'not-iterated.json', 'w') as f:
+            f.write('')
+        package = Package(pkg)
+        assert {item for item in package} == {package,}
 
 
 class Test_is_module:

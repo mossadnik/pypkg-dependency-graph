@@ -56,6 +56,18 @@ class SubModule(LocalModule):
     def get_parent(self) -> LocalModule | None:
         return self.package.resolve_path(self.path.parent)
 
+@dataclass(frozen=True)
+class ResourceFile(LocalModule):
+    package: 'Package'
+
+    @property
+    def identifier_tuple(self) -> models.ModuleIdentifier:
+        raise NotImplementedError('Resource files do not have an identifier_tuple.')
+
+    @property
+    def idenfifier(self) -> str:
+        return str(self.path.relative_to(self.package.path))
+
 
 @dataclass(frozen=True)
 class SubPackage(LocalModule):
@@ -107,8 +119,10 @@ class Package(LocalModule):
             return SubPackage(path, self)
         elif is_init_py(path):
             return self.resolve_path(path.parent)
+        elif not path.is_dir():
+            return ResourceFile(path, self)
         else:
-            raise ValueError(f'Not a package or module: {path}')
+            raise ValueError(f'Cannot resolve {path} to a known type.')
 
     def resolve_identifier(self, identifier: models.ModuleIdentifier) -> AnyModule:
         if identifier[0] != self.name:
@@ -152,6 +166,8 @@ class Package(LocalModule):
                     yield from iter_pkg(fn)
                 elif is_module(fn):
                     yield SubModule(fn, self)
+                elif is_resource_file(fn):
+                    yield ResourceFile(fn, self)
 
         yield self
         yield from iter_pkg(self.path)
@@ -173,3 +189,11 @@ def is_module(path: Path) -> bool:
     if path.is_dir():
         return False
     return path.suffixes == ['.py'] and not is_init_py(path)
+
+
+def is_resource_file(path: Path) -> bool:
+    if path.is_dir():
+        return False
+    if path.suffix == '.py':
+        return False
+    return True
