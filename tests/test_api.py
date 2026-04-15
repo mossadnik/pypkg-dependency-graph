@@ -23,6 +23,14 @@ class Test_get_package_dependency_graph:
         assert nodes =={top, top_other, nested, nested_other}
         assert edges == expected_edges
 
+    def test_ignores_resource_files(self, tmp_path: Path):
+        top = create_package(tmp_path, 'pkg')
+        with open(top / 'resource.json', 'w') as f:
+            f.write('')
+        top = Package(top)
+        nodes, edges = get_package_dependency_graph(top)
+        assert nodes == {top,}
+        assert edges == set()
 
 class Test_get_package_tree_edges:
     def test_simple(self, tmp_path: Path):

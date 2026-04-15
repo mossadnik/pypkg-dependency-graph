@@ -1,5 +1,5 @@
 import libcst as cst
-from .package import Package, LocalModule
+from .package import Package, LocalModule, SubModule, SubPackage
 from .providers import ImportProvider
 
 
@@ -13,6 +13,8 @@ def get_package_dependency_graph(package: Package) -> tuple[set[LocalModule], se
     nodes = set()
     edges = set()
     for module in package:
+        if not isinstance(module, (Package, SubPackage, SubModule)):
+            continue
         nodes.add(module)
         for dependency in get_dependencies(module, package):
             edges.add((module, dependency))
